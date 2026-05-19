@@ -1,0 +1,28 @@
+---
+- name: Generar inventario de VMs
+  hosts: esxi-01.pclinux.com
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Inyectar pyvmomi dentro del contenedor
+      ansible.builtin.pip:
+        name: pyvmomi
+        state: present
+        executable: /usr/bin/pip3
+      delegate_to: localhost
+
+
+    - name: Consultar la API para extraer el registro de VMs
+      community.vmware.vmware_vm_info:
+        hostname: "{{ ansible_host | default('192.168.35.27') }}"
+        username: "{{ lookup('ansible.builtin.env', 'VMWARE_USER') }}"
+        password: "{{ lookup('ansible.builtin.env', 'VMWARE_PASSWORD') }}"
+        validate_certs: false
+      delegate_to: localhost
+      register: listado_vms
+
+
+    - name: Mostrar unicamente los nombres de las maquinas
+      ansible.builtin.debug:
+        var: listado_vms.virtual_machines | map(attribute='guest_name') | list
