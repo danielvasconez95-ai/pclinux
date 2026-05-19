@@ -1,0 +1,30 @@
+---
+- name: Provisionar Maquina Virtual
+  hosts: esxi-01.pclinux.com
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Inyectar pyvmomi dentro del contenedor
+      ansible.builtin.pip:
+        name: pyvmomi
+        state: present
+        executable: /usr/bin/pip3
+      delegate_to: localhost
+
+
+    - name: Crear contenedor logico de VM
+      community.vmware.vmware_guest:
+        hostname: "{{ ansible_host | default('192.168.35.27') }}"
+        username: "{{ lookup('ansible.builtin.env', 'VMWARE_USER') }}"
+        password: "{{ lookup('ansible.builtin.env', 'VMWARE_PASSWORD') }}"
+        validate_certs: false
+        name: "Servidor_Aplicativo_01"
+        state: present
+        guest_id: "windows2019srv_64Guest"
+        datastore: "datastore1"
+        hardware:
+          memory_mb: 4096
+          num_cpus: 2
+          scsi: paravirtual
+      delegate_to: localhost
